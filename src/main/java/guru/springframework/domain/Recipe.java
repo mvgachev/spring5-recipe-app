@@ -1,5 +1,6 @@
 package guru.springframework.domain;
 
+import guru.springframework.commands.IngredientCommand;
 import lombok.Data;
 
 import javax.persistence.CascadeType;
@@ -15,6 +16,7 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -69,6 +71,14 @@ public class Recipe {
     public Optional<Ingredient> getIngredientWithId(Long ingredientId) {
         return ingredients.stream()
                 .filter(ingredient -> ingredient.getId().equals(ingredientId))
+                .findFirst();
+    }
+
+    public Optional<Ingredient> getIngredientCommonToNewOne(IngredientCommand ingredientCommand) {
+        return this.getIngredients().stream()
+                .filter(recipeIngredient -> recipeIngredient.getDescription().equals(ingredientCommand.getDescription()))
+                .filter(recipeIngredient -> recipeIngredient.getAmount().equals(ingredientCommand.getAmount()))
+                .filter(recipeIngredient -> recipeIngredient.getUnitOfMeasure().getId().equals(ingredientCommand.getUnitOfMeasure().getId()))
                 .findFirst();
     }
 }

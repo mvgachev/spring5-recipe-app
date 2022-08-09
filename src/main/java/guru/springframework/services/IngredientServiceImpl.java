@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Service
@@ -57,8 +58,13 @@ public class IngredientServiceImpl implements IngredientService {
 
             Recipe savedRecipe = recipeRepository.save(recipe);
 
-            return ingredientToIngredientCommand.convert(savedRecipe.getIngredientWithId(ingredientCommand.getId())
-                    .get());
+            Optional<Ingredient> savedIngredientOptional = savedRecipe.getIngredientWithId(ingredientCommand.getId());
+
+            if(!savedIngredientOptional.isPresent()) {
+                savedIngredientOptional = savedRecipe.getIngredientCommonToNewOne(ingredientCommand);
+            }
+
+            return ingredientToIngredientCommand.convert(savedIngredientOptional.get());
         }
     }
 
