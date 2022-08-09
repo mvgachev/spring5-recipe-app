@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Service
@@ -60,7 +59,7 @@ public class IngredientServiceImpl implements IngredientService {
 
             Optional<Ingredient> savedIngredientOptional = savedRecipe.getIngredientWithId(ingredientCommand.getId());
 
-            if(!savedIngredientOptional.isPresent()) {
+            if (!savedIngredientOptional.isPresent()) {
                 savedIngredientOptional = savedRecipe.getIngredientCommonToNewOne(ingredientCommand);
             }
 
@@ -84,12 +83,34 @@ public class IngredientServiceImpl implements IngredientService {
                 ingredientOptional.map(ingredientToIngredientCommand::convert);
 
 
-
         if (!ingredientCommandOptional.isPresent()) {
             log.error("Recipe with id " + recipeId + " does not contain any ingredient with id " + ingredientId);
         }
 
         return ingredientCommandOptional.get();
+    }
+
+    @Override
+    public void deleteByRecipeIdAndIngredientId(Long recipeId, Long ingredientId) {
+
+        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
+
+        if (!recipeOptional.isPresent()) {
+            log.error("Recipe with id " + recipeId + " not found.");
+        }
+
+        Recipe recipe = recipeOptional.get();
+
+        Optional<Ingredient> ingredientOptional = recipe.getIngredientWithId(ingredientId);
+
+
+        if (!ingredientOptional.isPresent()) {
+            log.error("Recipe with id " + recipeId + " does not contain any ingredient with id " + ingredientId);
+        }
+
+
+        recipe.removeIngredient(ingredientOptional.get());
+        recipeRepository.save(recipe);
     }
 
 

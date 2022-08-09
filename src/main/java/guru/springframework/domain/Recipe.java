@@ -68,6 +68,12 @@ public class Recipe {
         return this;
     }
 
+    public Recipe removeIngredient(Ingredient ingredient) {
+        ingredient.setRecipe(null);
+        ingredients.remove(ingredient);
+        return this;
+    }
+
     public Optional<Ingredient> getIngredientWithId(Long ingredientId) {
         return ingredients.stream()
                 .filter(ingredient -> ingredient.getId().equals(ingredientId))
