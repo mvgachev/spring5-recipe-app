@@ -16,6 +16,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Data
@@ -63,5 +64,11 @@ public class Recipe {
         ingredients.add(ingredient);
         ingredient.setRecipe(this);
         return this;
+    }
+
+    public Optional<Ingredient> getIngredientWithId(Long ingredientId) {
+        return ingredients.stream()
+                .filter(ingredient -> ingredient.getId().equals(ingredientId))
+                .findFirst();
     }
 }

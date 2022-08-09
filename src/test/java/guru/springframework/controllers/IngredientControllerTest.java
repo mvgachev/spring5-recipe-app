@@ -60,7 +60,7 @@ class IngredientControllerTest {
 
         mockMvc.perform(get("/recipe/1/ingredient/2/show"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("recipe/ingredient/show"))
+                .andExpect(view().name("recipe/ingredients/show"))
                 .andExpect(model().attributeExists("ingredient"));
 
         verify(ingredientService).findByRecipeIdAndIngredientId(anyLong(), anyLong());

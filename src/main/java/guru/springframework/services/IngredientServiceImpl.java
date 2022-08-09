@@ -1,11 +1,15 @@
 package guru.springframework.services;
 
 import guru.springframework.commands.IngredientCommand;
+import guru.springframework.converters.IngredientCommandToIngredient;
 import guru.springframework.converters.IngredientToIngredientCommand;
+import guru.springframework.domain.Ingredient;
 import guru.springframework.domain.Recipe;
 import guru.springframework.repositories.RecipeRepository;
+import guru.springframework.repositories.UnitOfMeasureRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -15,12 +19,48 @@ public class IngredientServiceImpl implements IngredientService {
 
     private final RecipeRepository recipeRepository;
     private final IngredientToIngredientCommand ingredientToIngredientCommand;
+    private final IngredientCommandToIngredient ingredientCommandToIngredient;
+    private final UnitOfMeasureRepository unitOfMeasureRepository;
 
-    public IngredientServiceImpl(RecipeRepository recipeRepository, IngredientToIngredientCommand ingredientToIngredientCommand) {
+    public IngredientServiceImpl(RecipeRepository recipeRepository, IngredientToIngredientCommand ingredientToIngredientCommand, IngredientCommandToIngredient ingredientCommandToIngredient, UnitOfMeasureRepository unitOfMeasureRepository) {
         this.recipeRepository = recipeRepository;
         this.ingredientToIngredientCommand = ingredientToIngredientCommand;
+        this.ingredientCommandToIngredient = ingredientCommandToIngredient;
+        this.unitOfMeasureRepository = unitOfMeasureRepository;
     }
 
+
+    @Override
+    @Transactional
+    public IngredientCommand saveIngredientCommand(IngredientCommand ingredientCommand) {
+        Optional<Recipe> recipeOptional = recipeRepository.findById(ingredientCommand.getRecipeId());
+
+        if (!recipeOptional.isPresent()) {
+            //TODO toss error if not found
+            log.error("Recipe not found for id " + ingredientCommand.getRecipeId());
+            return new IngredientCommand();
+        } else {
+            Recipe recipe = recipeOptional.get();
+
+            Optional<Ingredient> ingredientOptional = recipe.getIngredientWithId(ingredientCommand.getId());
+
+            if (ingredientOptional.isPresent()) {
+                Ingredient ingredient = ingredientOptional.get();
+                ingredient.setDescription(ingredientCommand.getDescription());
+                ingredient.setAmount(ingredientCommand.getAmount());
+                ingredient.setUnitOfMeasure(unitOfMeasureRepository
+                        .findById(ingredientCommand.getUnitOfMeasure().getId())
+                        .orElseThrow(() -> new RuntimeException("UOM not found")));  //TODO address this
+            } else {
+                recipe.addIngredient(ingredientCommandToIngredient.convert(ingredientCommand));
+            }
+
+            Recipe savedRecipe = recipeRepository.save(recipe);
+
+            return ingredientToIngredientCommand.convert(savedRecipe.getIngredientWithId(ingredientCommand.getId())
+                    .get());
+        }
+    }
 
     @Override
     public IngredientCommand findByRecipeIdAndIngredientId(Long recipeId, Long ingredientId) {
@@ -33,17 +73,18 @@ public class IngredientServiceImpl implements IngredientService {
 
         Recipe recipe = recipeOptional.get();
 
-
-        Optional<IngredientCommand> ingredientOptional = recipe.getIngredients().stream()
-                .filter(ingredient -> ingredient.getId().equals(ingredientId))
-                .map(ingredientToIngredientCommand::convert)
-                .findFirst();
+        Optional<Ingredient> ingredientOptional = recipe.getIngredientWithId(ingredientId);
+        Optional<IngredientCommand> ingredientCommandOptional =
+                ingredientOptional.map(ingredientToIngredientCommand::convert);
 
 
-        if (!ingredientOptional.isPresent()) {
+
+        if (!ingredientCommandOptional.isPresent()) {
             log.error("Recipe with id " + recipeId + " does not contain any ingredient with id " + ingredientId);
         }
 
-        return ingredientOptional.get();
+        return ingredientCommandOptional.get();
     }
+
+
 }
