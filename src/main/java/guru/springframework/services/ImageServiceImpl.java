@@ -35,6 +35,7 @@ public class ImageServiceImpl implements ImageService{
             }
             recipe.setImage(bytes);
             recipeRepository.save(recipe);
+            log.info("Image was uploaded.");
 
         } catch (IOException e) {
             //todo handle better
